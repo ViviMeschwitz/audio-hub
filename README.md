@@ -1,2 +1,2 @@
 # audio-hub
-Sound visualization &amp; editing tool. Part of the Isaac Newton Project.
+maze runner, audio editor, recorder, stream player. Part of the Isaac Newton Project.
