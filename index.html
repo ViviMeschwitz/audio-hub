@@ -1,0 +1,2816 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>音響</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg: #080808;
+  --surface: #0f0f0f;
+  --surface2: #141414;
+  --border: #1a1a1a;
+  --border2: #252525;
+  --text: #c8c0b0;
+  --text-dim: #3a3530;
+  --text-mid: #6a6058;
+  --accent: #8b7355;
+  --accent-bright: #c4a97a;
+  --playing: #5a9e6a;
+  --playing-dim: #2a4a32;
+  --selection: #4a7a8a;
+  --selection-dim: #1a3a42;
+  --danger: #7a4040;
+  --purple: #7a5a9a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  min-height: 100vh;
+  font-size: 12px;
+  overflow-x: hidden;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===================== LANDING ===================== */
+#landing {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  position: relative;
+}
+
+.landing-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(48px, 8vw, 96px);
+  font-weight: 300;
+  letter-spacing: 0.1em;
+  color: var(--text);
+  margin-bottom: 8px;
+  opacity: 0;
+  animation: fadeUp 1s 0.2s forwards;
+}
+
+.landing-sub {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: var(--text-mid);
+  margin-bottom: 80px;
+  opacity: 0;
+  animation: fadeUp 1s 0.5s forwards;
+  text-transform: uppercase;
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  width: 100%;
+  max-width: 640px;
+  opacity: 0;
+  animation: fadeUp 1s 0.8s forwards;
+}
+
+.choice-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 40px 32px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.choice-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 60%, rgba(139,115,85,0.05));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.choice-card:hover { border-color: var(--accent); }
+.choice-card:hover::before { opacity: 1; }
+
+.choice-num {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  margin-bottom: 24px;
+}
+
+.choice-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--accent-bright);
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+.choice-desc {
+  font-size: 11px;
+  color: var(--text-mid);
+  line-height: 1.8;
+  letter-spacing: 0.05em;
+}
+
+.choice-arrow {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  font-size: 18px;
+  color: var(--text-dim);
+  transition: all 0.2s;
+}
+
+.choice-card:hover .choice-arrow {
+  color: var(--accent-bright);
+  transform: translate(3px, -3px);
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================== APP SHELL ===================== */
+#app { display: none; height: 100vh; flex-direction: column; }
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.app-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--text);
+}
+
+.app-mode {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+}
+
+.app-back {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-mid);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.app-back:hover { border-color: var(--accent); color: var(--accent-bright); }
+
+/* ===================== YOUTUBE PLAYER MODE ===================== */
+#mode-youtube {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#mode-youtube.active { display: flex; }
+
+.yt-body {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.yt-main {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.yt-sidebar {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* youtube-player はbody直下に絶対配置（CSSで非表示にしない） */
+
+.now-playing-area {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 28px;
+}
+
+.np-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: background 0.3s;
+}
+.dot.on { background: var(--playing); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.np-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--accent-bright);
+  min-height: 28px;
+  line-height: 1.3;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  font-size: 10px;
+  color: var(--text-mid);
+}
+
+.prog-bar {
+  flex: 1;
+  height: 2px;
+  background: var(--border2);
+  cursor: pointer;
+  position: relative;
+}
+
+.prog-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  pointer-events: none;
+  transition: width 0.4s linear;
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent-bright); }
+.btn.on { border-color: var(--playing); color: var(--playing); }
+.btn.icon { width: 34px; height: 34px; padding: 0; font-size: 13px; }
+
+.vol-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 70px; height: 2px;
+  background: var(--border2);
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+.add-row {
+  display: flex;
+  gap: 8px;
+}
+
+input[type=text] {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input[type=text]::placeholder { color: var(--text-dim); }
+input[type=text]:focus { border-color: var(--accent); }
+
+.playlist-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pl-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  margin-bottom: 1px;
+  transition: all 0.1s;
+}
+.track:hover { border-color: var(--border); }
+.track.active { border-left-color: var(--playing); background: #0f1a0f; }
+
+.track-n { font-size: 10px; color: var(--text-dim); width: 18px; text-align: right; flex-shrink: 0; }
+.track.active .track-n { color: var(--playing); }
+.track-t { flex: 1; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.track.active .track-t { color: var(--accent-bright); }
+.track-del { background: none; border: none; color: transparent; cursor: pointer; font-size: 13px; padding: 2px 5px; }
+.track:hover .track-del { color: var(--text-dim); }
+.track-del:hover { color: var(--danger) !important; }
+
+.empty { padding: 24px; text-align: center; color: var(--text-dim); font-size: 11px; border: 1px dashed var(--border); }
+
+/* ===================== AUDIO EDITOR MODE ===================== */
+#mode-editor {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+#mode-editor.active { display: flex; }
+
+.editor-body {
+  flex: 1;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  overflow: hidden;
+  padding: 24px;
+  gap: 20px;
+}
+
+/* Drop zone */
+.drop-zone {
+  border: 1px dashed var(--border2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag { border-color: var(--accent); }
+.drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.drop-icon {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 48px;
+  font-weight: 300;
+  color: var(--text-dim);
+}
+.drop-text { font-size: 11px; letter-spacing: 0.15em; color: var(--text-mid); text-transform: uppercase; }
+.drop-sub { font-size: 10px; color: var(--text-dim); }
+
+/* Waveform area */
+.waveform-panel {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  overflow: hidden;
+}
+.waveform-panel.visible { display: flex; }
+
+.waveform-wrap {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  height: 140px;
+  cursor: crosshair;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+canvas#waveform {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Playhead */
+.playhead {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: var(--accent-bright);
+  pointer-events: none;
+  left: 0%;
+  transition: left 0.05s linear;
+}
+
+/* Selection overlay */
+.selection-overlay {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: rgba(74,122,138,0.2);
+  border-left: 1px solid var(--selection);
+  border-right: 1px solid var(--selection);
+  pointer-events: none;
+  display: none;
+}
+
+/* Time ruler */
+.time-ruler {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+/* Controls panel */
+.controls-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.ctrl-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 16px;
+}
+
+.ctrl-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ctrl-val {
+  color: var(--accent-bright);
+}
+
+.ctrl-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 2px;
+  background: var(--border2);
+  outline: none;
+  margin-bottom: 10px;
+  display: block;
+}
+.ctrl-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+.ctrl-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Edit toolbar */
+.edit-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.edit-toolbar-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-right: 8px;
+}
+
+.sel-info {
+  font-size: 10px;
+  color: var(--text-mid);
+  margin-left: auto;
+}
+
+.sel-info span { color: var(--selection); }
+
+/* Transport */
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.time-display {
+  font-family: 'Space Mono', monospace;
+  font-size: 18px;
+  color: var(--accent-bright);
+  letter-spacing: 0.1em;
+  min-width: 80px;
+}
+
+.total-time {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Math annotation */
+.math-note {
+  font-size: 9px;
+  color: var(--purple);
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border: 1px solid rgba(122,90,154,0.3);
+  margin-left: auto;
+}
+
+/* History panel */
+.history-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  flex-shrink: 0;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.history-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.history-item {
+  font-size: 10px;
+  color: var(--text-mid);
+  padding: 2px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+}
+
+.history-item:last-child { border-bottom: none; }
+.history-item .h-op { color: var(--text); }
+.history-item .h-undo { cursor: pointer; color: var(--text-dim); }
+.history-item .h-undo:hover { color: var(--accent-bright); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); }
+
+</style>
+</head>
+<body>
+
+<!-- ===== LANDING ===== -->
+<div id="landing">
+  <div class="landing-title">音響</div>
+  <div class="landing-sub">Sound · Edit · Transform</div>
+  <div class="choices" style="grid-template-columns:1fr 1fr;">
+    <div class="choice-card" onclick="enterMode('youtube')">
+      <div class="choice-num">01</div>
+      <div class="choice-title">Stream Player</div>
+      <div class="choice-desc">YouTube URLを登録<br>動画なし・広告なし<br>プレイリスト保存・ループ</div>
+      <div class="choice-arrow">→</div>
+    </div>
+    <div class="choice-card" onclick="enterMode('editor')">
+      <div class="choice-num">02</div>
+      <div class="choice-title">Audio Editor</div>
+      <div class="choice-desc">音声ファイルを読み込む<br>波形編集・Time Stretch<br>ピッチ変更・ループ</div>
+      <div class="choice-arrow">→</div>
+    </div>
+    <div class="choice-card" onclick="enterMode('recorder')">
+      <div class="choice-num">03</div>
+      <div class="choice-title">Recorder</div>
+      <div class="choice-desc">マイク・外部入力で録音<br>波形リアルタイム表示<br>録音後すぐに編集・保存</div>
+      <div class="choice-arrow">→</div>
+    </div>
+    <div class="choice-card" onclick="enterMode('visual')">
+      <div class="choice-num">04</div>
+      <div class="choice-title">Visual Sound</div>
+      <div class="choice-desc">音声と連動する発光描画<br>パーティクル・炎・星雲<br>動画としてExport</div>
+      <div class="choice-arrow">→</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APP SHELL ===== -->
+<div id="app">
+  <div class="app-header">
+    <div class="app-logo">音響</div>
+    <div class="app-mode" id="mode-label">—</div>
+    <button class="app-back" onclick="goBack()">← 戻る</button>
+  </div>
+
+  <!-- YOUTUBE MODE -->
+  <div id="mode-youtube">
+    <div class="yt-body">
+      <div class="yt-main">
+        <div class="now-playing-area">
+          <div class="np-label"><div class="dot" id="yt-dot"></div>now playing</div>
+          <div class="np-title" id="yt-title">—</div>
+          <div class="progress-row">
+            <span id="yt-cur">0:00</span>
+            <div class="prog-bar" id="yt-prog" onclick="ytSeek(event)">
+              <div class="prog-fill" id="yt-fill"></div>
+            </div>
+            <span id="yt-dur">0:00</span>
+          </div>
+          <div class="controls-row">
+            <button class="btn icon" id="yt-prev" onclick="ytPrev()">⏮</button>
+            <button class="btn icon" id="yt-play" onclick="ytPlay()">▶</button>
+            <button class="btn icon" id="yt-next" onclick="ytNext()">⏭</button>
+            <button class="btn" id="yt-shuf" onclick="ytShuffle()">shuffle</button>
+            <div class="vol-row">vol<input type="range" id="yt-vol" min="0" max="100" value="80" oninput="ytVol(this)"></div>
+          </div>
+        </div>
+        <div class="add-row">
+          <input type="text" id="yt-url" placeholder="YouTube URL を貼り付け...">
+          <button class="btn" onclick="ytAdd()">+ add</button>
+        </div>
+      </div>
+      <div class="yt-sidebar">
+        <div class="pl-header" style="padding:16px 16px 0">
+          <span>playlist</span>
+          <span id="yt-count">0 tracks</span>
+        </div>
+        <div class="playlist-wrap" id="yt-playlist">
+          <div class="empty" id="yt-empty">URLを追加して始める</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDITOR MODE -->
+  <div id="mode-editor">
+    <div class="editor-body">
+
+      <div style="display:flex;flex-direction:column;gap:16px;flex:1;overflow:hidden;min-height:0;">
+
+        <!-- Drop zone -->
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="file-input" accept="audio/*" onchange="loadFile(this)">
+          <div class="drop-icon">♪</div>
+          <div class="drop-text">音声ファイルをドロップ</div>
+          <div class="drop-sub">または クリックして選択 · mp3 / wav / ogg / flac</div>
+        </div>
+
+        <!-- Waveform panel (hidden until file loaded) -->
+        <div class="waveform-panel" id="waveform-panel">
+
+          <!-- Edit toolbar -->
+          <div class="edit-toolbar">
+            <div class="edit-toolbar-label">edit</div>
+            <button class="btn" id="btn-cut" onclick="editCut()" title="選択範囲をカット">cut</button>
+            <button class="btn" id="btn-copy" onclick="editCopy()" title="選択範囲をコピー">copy</button>
+            <button class="btn" id="btn-paste" onclick="editPaste()" title="現在位置にペースト">paste</button>
+            <button class="btn" id="btn-silence" onclick="editSilence()" title="選択範囲を無音化">silence</button>
+            <button class="btn" id="btn-fadein" onclick="editFade('in')" title="選択範囲にフェードイン">fade in</button>
+            <button class="btn" id="btn-fadeout" onclick="editFade('out')" title="選択範囲にフェードアウト">fade out</button>
+            <button class="btn" onclick="openMerge()" title="音声ファイルを結合">+ merge</button>
+            <button class="btn" id="btn-undo" onclick="editUndo()">undo</button>
+            <button class="btn" id="btn-export" onclick="exportAudio()" style="margin-left:8px;">export</button>
+            <div class="sel-info" id="sel-info">選択: <span>なし</span></div>
+          </div>
+
+          <!-- Merge dialog -->
+          <div id="merge-dialog" style="display:none;background:var(--surface);border:1px solid var(--border);padding:16px;flex-shrink:0;">
+            <div style="font-size:10px;letter-spacing:0.2em;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px;">merge · 音声ファイルを結合</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input type="file" id="merge-input" accept="audio/*" style="color:var(--text-mid);font-size:11px;background:none;border:1px solid var(--border);padding:6px;flex:1;">
+              <select id="merge-pos" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'Space Mono',monospace;font-size:11px;padding:6px 10px;">
+                <option value="end">末尾に追加</option>
+                <option value="cursor">カーソル位置に挿入</option>
+                <option value="start">先頭に追加</option>
+              </select>
+              <button class="btn" onclick="executeMerge()">merge</button>
+              <button class="btn" onclick="document.getElementById('merge-dialog').style.display='none'">cancel</button>
+            </div>
+          </div>
+
+          <!-- Waveform -->
+          <div class="waveform-wrap" id="waveform-wrap"
+               onmousedown="wfMouseDown(event)"
+               onmousemove="wfMouseMove(event)"
+               onmouseup="wfMouseUp(event)">
+            <canvas id="waveform"></canvas>
+            <div class="selection-overlay" id="sel-overlay"></div>
+            <div class="playhead" id="playhead"></div>
+          </div>
+
+          <!-- Time ruler -->
+          <div class="time-ruler" id="time-ruler"></div>
+
+          <!-- Controls -->
+          <div class="controls-panel">
+            <div class="ctrl-group">
+              <div class="ctrl-label">Speed <span class="ctrl-val" id="speed-val">1.00×</span></div>
+              <input type="range" class="ctrl-slider" id="speed-slider" min="25" max="400" value="100" oninput="updateSpeed(this.value)">
+              <div class="ctrl-btns">
+                <button class="btn" onclick="setSpeed(50)">0.5×</button>
+                <button class="btn" onclick="setSpeed(100)">1×</button>
+                <button class="btn" onclick="setSpeed(200)">2×</button>
+              </div>
+            </div>
+            <div class="ctrl-group">
+              <div class="ctrl-label">Pitch <span class="ctrl-val" id="pitch-val">±0 st</span></div>
+              <input type="range" class="ctrl-slider" id="pitch-slider" min="-24" max="24" value="0" oninput="updatePitch(this.value)">
+              <div class="ctrl-btns">
+                <button class="btn" onclick="setPitch(-12)">-12st</button>
+                <button class="btn" onclick="setPitch(0)">0</button>
+                <button class="btn" onclick="setPitch(12)">+12st</button>
+              </div>
+            </div>
+            <div class="ctrl-group">
+              <div class="ctrl-label">Loop & Volume</div>
+              <div class="ctrl-btns" style="margin-bottom:10px;">
+                <button class="btn" id="btn-loop" onclick="toggleLoop()">loop: off</button>
+                <button class="btn" id="btn-loop-sel" onclick="toggleLoopSel()">loop sel</button>
+              </div>
+              <div class="ctrl-label">Vol <span class="ctrl-val" id="ed-vol-val">100%</span></div>
+              <input type="range" class="ctrl-slider" id="ed-vol" min="0" max="150" value="100" oninput="updateEdVol(this.value)">
+            </div>
+          </div>
+
+          <!-- Transport -->
+          <div class="transport">
+            <div class="time-display" id="ed-time">0:00.000</div>
+            <div class="total-time" id="ed-total">/ 0:00.000</div>
+            <button class="btn icon" onclick="edSeekStart()">⏮</button>
+            <button class="btn icon" id="ed-play-btn" onclick="edTogglePlay()">▶</button>
+            <button class="btn icon" onclick="edStop()">⏹</button>
+            <div class="math-note">部分位相：選択区間 ⊂ [0, T]　|　コンパクト：有限操作で完結</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- History -->
+      <div class="history-panel" id="history-panel" style="display:none;">
+        <div class="history-label">edit history</div>
+        <div id="history-list"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RECORDER MODE -->
+  <div id="mode-recorder" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+    <div style="flex:1;display:flex;flex-direction:column;padding:32px;gap:20px;overflow:hidden;">
+
+      <!-- Status -->
+      <div style="background:var(--surface);border:1px solid var(--border);padding:24px;display:flex;align-items:center;gap:20px;">
+        <div>
+          <div style="font-size:10px;letter-spacing:0.2em;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">
+            <span class="dot" id="rec-dot"></span> status
+          </div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--accent-bright);" id="rec-status">待機中</div>
+        </div>
+        <div style="font-family:'Space Mono',monospace;font-size:32px;color:var(--text-mid);margin-left:auto;" id="rec-timer">0:00.000</div>
+      </div>
+
+      <!-- Realtime waveform -->
+      <div style="background:var(--surface);border:1px solid var(--border);position:relative;height:100px;flex-shrink:0;">
+        <canvas id="rec-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+        <div style="position:absolute;top:8px;left:12px;font-size:9px;letter-spacing:0.2em;color:var(--text-dim);text-transform:uppercase;">live input</div>
+      </div>
+
+      <!-- Controls -->
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button class="btn" id="rec-btn" onclick="recToggle()" style="padding:10px 28px;font-size:13px;">● rec</button>
+        <button class="btn" id="rec-stop" onclick="recStop()" disabled style="padding:10px 20px;">■ stop</button>
+        <div style="font-size:10px;color:var(--text-dim);margin-left:8px;" id="rec-device-label">マイク入力</div>
+        <div id="rec-safari-notice" style="display:none;font-size:10px;color:#f87;margin-left:8px;">⚠ Safari/iOS は録音に非対応です。Chrome / Firefox をご利用ください。</div>
+      </div>
+
+      <!-- Recordings list -->
+      <div style="flex:1;overflow-y:auto;">
+        <div style="font-size:10px;letter-spacing:0.2em;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px;">recordings</div>
+        <div id="rec-list">
+          <div class="empty">録音するとここに表示されます</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- VISUAL SOUND MODE -->
+  <div id="mode-visual" style="display:none;flex:1;flex-direction:column;overflow:hidden;position:relative;">
+
+    <!-- Toolbar row 1: Audio source -->
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(8,8,8,0.95);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+      <label style="font-size:9px;letter-spacing:0.15em;color:var(--text-dim);text-transform:uppercase;">音源</label>
+      <label class="btn" style="cursor:pointer;">📁 file
+        <input type="file" id="vs-file" accept="audio/*" style="display:none;" onchange="vsLoadFile(this)">
+      </label>
+      <button class="btn" id="vs-file-clear-btn" onclick="vsUnloadFile()" style="display:none;">✕ eject</button>
+      <div style="font-size:10px;color:var(--text-dim);" id="vs-audio-status">ファイルを選択してください</div>
+      <div style="width:1px;height:20px;background:var(--border);"></div>
+      <label style="font-size:9px;color:var(--text-dim);">start (sec)</label>
+      <input type="number" id="mz-start" value="0" min="0" style="width:60px;font-size:10px;padding:4px 6px;">
+      <label style="font-size:9px;color:var(--text-dim);">goal (sec)</label>
+      <input type="number" id="mz-end" value="180" min="1" style="width:60px;font-size:10px;padding:4px 6px;">
+      <span style="font-size:9px;color:var(--text-dim);" id="mz-duration-label"></span>
+      <div style="width:1px;height:20px;background:var(--border);"></div>
+      <button class="btn" id="vs-play-btn" onclick="vsMazePlay()" disabled style="border-color:var(--playing);color:var(--playing);">▶ play</button>
+      <button class="btn" id="vs-stop-btn" onclick="vsMazeStop()" style="display:none;">■ stop</button>
+      <div style="margin-left:auto;display:flex;gap:6px;">
+        <button class="btn" id="vs-rec-btn" onclick="vsToggleRec()" style="border-color:var(--danger);color:var(--danger);">● REC</button>
+        <button class="btn" id="vs-export-btn" onclick="vsExport()" disabled>↓ export</button>
+      </div>
+    </div>
+
+    <!-- Toolbar row 2: Maze controls -->
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(5,5,20,0.97);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+      <label style="font-size:9px;letter-spacing:0.15em;color:var(--text-dim);text-transform:uppercase;">モード</label>
+      <button class="btn" id="vs-mode-particle-btn" onclick="vsSetDrawMode('particle')">✦ particle</button>
+      <button class="btn" id="vs-mode-maze-btn" onclick="vsSetDrawMode('maze')" style="border-color:var(--playing);color:var(--playing);">⬛ maze runner</button>
+      <div style="width:1px;height:20px;background:var(--border);"></div>
+      <label style="font-size:9px;color:var(--text-dim);">ink</label>
+      <div id="vs-palette" style="display:flex;gap:3px;">
+        <div class="vs-color active" data-hue="200" style="background:hsl(200,100%,60%);"></div>
+        <div class="vs-color" data-hue="280" style="background:hsl(280,100%,60%);"></div>
+        <div class="vs-color" data-hue="30"  style="background:hsl(30,100%,60%);"></div>
+        <div class="vs-color" data-hue="120" style="background:hsl(120,100%,50%);"></div>
+        <div class="vs-color" data-hue="0"   style="background:hsl(0,100%,60%);"></div>
+        <div class="vs-color" data-hue="-1"  style="background:linear-gradient(135deg,#f0f,#0ff,#ff0);"></div>
+      </div>
+      <div style="width:1px;height:20px;background:var(--border);"></div>
+      <div id="vs-particle-ctrl" style="display:flex;gap:6px;align-items:center;">
+        <label style="font-size:9px;color:var(--text-dim);">強度</label>
+        <input type="range" id="vs-intensity" min="1" max="10" value="5" style="width:60px;">
+        <select id="vs-mode" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Space Mono',monospace;font-size:10px;padding:4px 8px;">
+          <option value="flame">炎</option><option value="nebula">星雲</option>
+          <option value="electric">電光</option><option value="snow">雪</option>
+        </select>
+      </div>
+      <div id="vs-maze-hud" style="display:none;gap:12px;align-items:center;font-size:10px;color:var(--text-dim);">
+        <span>BPM: <b id="mz-bpm-disp">—</b></span>
+        <span>速度: <b id="mz-spd-disp">—</b></span>
+        <span>残り: <b id="mz-remain-disp">—</b></span>
+      </div>
+      <button class="btn" onclick="vsClear()" style="margin-left:auto;">↺ new maze</button>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="vs-canvas" style="flex:1;display:block;cursor:crosshair;touch-action:none;"></canvas>
+
+    <!-- Freq bar -->
+    <div style="height:36px;background:rgba(8,8,8,0.8);border-top:1px solid var(--border);flex-shrink:0;position:relative;overflow:hidden;">
+      <canvas id="vs-freq-canvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+    </div>
+
+  </div>
+
+    <!-- Toolbar -->
+
+</div>
+
+<style>
+.vs-color {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.15s;
+}
+.vs-color.active { border-color: white; }
+.vs-color:hover { border-color: rgba(255,255,255,0.5); }
+</style>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+// ============================================================
+// NAVIGATION
+// ============================================================
+function enterMode(mode) {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  const labels = { youtube: 'Stream Player', editor: 'Audio Editor', recorder: 'Recorder', visual: 'Visual Sound' };
+  document.getElementById('mode-label').textContent = labels[mode] || mode;
+  if (mode === 'youtube') document.getElementById('mode-youtube').classList.add('active');
+  else if (mode === 'editor') document.getElementById('mode-editor').classList.add('active');
+  else if (mode === 'recorder') {
+    document.getElementById('mode-recorder').style.display = 'flex';
+    recInitCanvas();
+  } else if (mode === 'visual') {
+    document.getElementById('mode-visual').style.display = 'flex';
+    vsInit();
+  }
+}
+
+function goBack() {
+  document.getElementById('landing').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('mode-youtube').classList.remove('active');
+  document.getElementById('mode-editor').classList.remove('active');
+  document.getElementById('mode-recorder').style.display = 'none';
+  document.getElementById('mode-visual').style.display = 'none';
+  edStop();
+  recStop();
+  vsCleanup();
+}
+
+// ============================================================
+// RECORDER
+// ============================================================
+let mediaRecorder = null;
+let recChunks = [];
+let recStream = null;
+let recAnalyser = null;
+let recAnimId = null;
+let recStartTime = null;
+let recTimerInterval = null;
+let recCount = 0;
+let recIsRecording = false;
+
+function recInitCanvas() {
+  const canvas = document.getElementById('rec-canvas');
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  const ctx2 = canvas.getContext('2d');
+  ctx2.fillStyle = '#0f0f0f';
+  ctx2.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+async function recToggle() {
+  if (recIsRecording) { recPause(); return; }
+
+  // Safari / iOS: MediaRecorder が未対応の場合は早期リターン
+  if (typeof MediaRecorder === 'undefined') {
+    alert('このブラウザは録音機能に対応していません。\nChrome または Firefox をご利用ください。');
+    return;
+  }
+
+  if (!recStream) {
+    try {
+      recStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch(e) {
+      alert('マイクへのアクセスが拒否されました。\nブラウザの設定でマイクを許可してください。');
+      return;
+    }
+    // Analyser for realtime waveform
+    const ctx = getCtx();
+    const src = ctx.createMediaStreamSource(recStream);
+    recAnalyser = ctx.createAnalyser();
+    recAnalyser.fftSize = 2048;
+    src.connect(recAnalyser);
+  }
+
+  recChunks = [];
+
+  // Safariは 'audio/mp4' または 'audio/aac' を使用、Chrome/Firefoxは 'audio/webm'
+  const mimes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg', ''];
+  const mime = mimes.find(m => m === '' || MediaRecorder.isTypeSupported(m));
+  try {
+    mediaRecorder = mime
+      ? new MediaRecorder(recStream, { mimeType: mime })
+      : new MediaRecorder(recStream);
+  } catch(e) {
+    mediaRecorder = new MediaRecorder(recStream);
+  }
+  mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recChunks.push(e.data); };
+  mediaRecorder.onstop = recOnStop;
+  mediaRecorder.start(100);
+
+  recIsRecording = true;
+  recStartTime = Date.now();
+  recTimerInterval = setInterval(recUpdateTimer, 50);
+  document.getElementById('rec-btn').textContent = '⏸ pause';
+  document.getElementById('rec-btn').classList.add('on');
+  document.getElementById('rec-stop').disabled = false;
+  document.getElementById('rec-status').textContent = '録音中';
+  document.getElementById('rec-dot').classList.add('on');
+  recDrawWaveform();
+}
+
+function recPause() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.pause();
+    recIsRecording = false;
+    clearInterval(recTimerInterval);
+    cancelAnimationFrame(recAnimId);
+    document.getElementById('rec-btn').textContent = '● rec';
+    document.getElementById('rec-btn').classList.remove('on');
+    document.getElementById('rec-status').textContent = '一時停止';
+    document.getElementById('rec-dot').classList.remove('on');
+  }
+}
+
+function recStop() {
+  if (mediaRecorder && (mediaRecorder.state === 'recording' || mediaRecorder.state === 'paused')) {
+    mediaRecorder.stop();
+  }
+  recIsRecording = false;
+  clearInterval(recTimerInterval);
+  cancelAnimationFrame(recAnimId);
+  document.getElementById('rec-btn').textContent = '● rec';
+  document.getElementById('rec-btn').classList.remove('on');
+  document.getElementById('rec-stop').disabled = true;
+  document.getElementById('rec-status').textContent = '待機中';
+  document.getElementById('rec-dot').classList.remove('on');
+}
+
+function recUpdateTimer() {
+  const elapsed = (Date.now() - recStartTime) / 1000;
+  document.getElementById('rec-timer').textContent = fmtTimeFull(elapsed);
+}
+
+function recDrawWaveform() {
+  if (!recAnalyser) return;
+  const canvas = document.getElementById('rec-canvas');
+  const ctx2 = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const bufLen = recAnalyser.frequencyBinCount;
+  const dataArr = new Float32Array(bufLen);
+  recAnalyser.getFloatTimeDomainData(dataArr);
+
+  // Scroll effect: shift left
+  const imageData = ctx2.getImageData(1, 0, W-1, H);
+  ctx2.putImageData(imageData, 0, 0);
+  ctx2.fillStyle = '#0f0f0f';
+  ctx2.fillRect(W-1, 0, 1, H);
+
+  // Draw new column
+  const mid = H / 2;
+  let sum = 0;
+  for (let i = 0; i < bufLen; i++) sum += Math.abs(dataArr[i]);
+  const avg = sum / bufLen;
+  const amp = Math.min(avg * 4, 1);
+
+  ctx2.strokeStyle = `rgba(90,158,106,${0.4 + amp * 0.6})`;
+  ctx2.lineWidth = 1;
+  ctx2.beginPath();
+  ctx2.moveTo(W-1, mid - amp * mid * 0.9);
+  ctx2.lineTo(W-1, mid + amp * mid * 0.9);
+  ctx2.stroke();
+
+  if (recIsRecording) recAnimId = requestAnimationFrame(recDrawWaveform);
+}
+
+async function recOnStop() {
+  if (recChunks.length === 0) return;
+  // mimeTypeをMediaRecorderの実際のタイプに合わせる（Safari対応）
+  const recMime = (mediaRecorder && mediaRecorder.mimeType) ? mediaRecorder.mimeType : 'audio/webm';
+  const blob = new Blob(recChunks, { type: recMime });
+  recCount++;
+  const name = `rec_${String(recCount).padStart(2,'0')}`;
+
+  // Decode to AudioBuffer — Safari: コールバック版で統一
+  const arrayBuf = await blob.arrayBuffer();
+  const ctx = getCtx();
+  let audioBuf;
+  try {
+    audioBuf = await new Promise((resolve, reject) => {
+      try { ctx.decodeAudioData(arrayBuf, resolve, reject); }
+      catch(ex) { reject(ex); }
+    });
+  } catch(e) {
+    alert('録音データの処理に失敗しました: ' + (e.message||e));
+    return;
+  }
+
+  // Add to recordings list
+  const list = document.getElementById('rec-list');
+  list.querySelectorAll('.empty').forEach(e=>e.remove());
+
+  const dur = fmtTimeFull(audioBuf.duration);
+  const item = document.createElement('div');
+  item.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);margin-bottom:2px;';
+  item.innerHTML = `
+    <span style="font-size:11px;color:var(--accent-bright);min-width:80px;">${name}</span>
+    <span style="font-size:10px;color:var(--text-mid);">${dur}</span>
+    <button class="btn" style="margin-left:auto;" data-name="${name}">▶ play</button>
+    <button class="btn">→ editor</button>
+    <button class="btn">↓ save</button>
+  `;
+
+  // Play
+  item.querySelectorAll('.btn')[0].addEventListener('click', function() {
+    const src = getCtx().createBufferSource();
+    src.buffer = audioBuf;
+    src.connect(getCtx().destination);
+    src.start();
+    this.textContent = '▶ ...';
+    src.onended = () => this.textContent = '▶ play';
+  });
+
+  // Send to editor
+  item.querySelectorAll('.btn')[1].addEventListener('click', () => {
+    originalBuffer = audioBuf;
+    workingBuffer = cloneBuffer(audioBuf);
+    selStart = null; selEnd = null;
+    history = [];
+    pauseOffset = 0;
+    // Switch to editor
+    document.getElementById('mode-recorder').style.display = 'none';
+    document.getElementById('mode-editor').classList.add('active');
+    document.getElementById('mode-label').textContent = 'Audio Editor';
+    document.getElementById('drop-zone').style.display = 'none';
+    document.getElementById('waveform-panel').classList.add('visible');
+    document.getElementById('history-panel').style.display = 'block';
+    drawWaveform(); updateTimeRuler(); updateSelInfo(); updateHistoryUI(); updateTotalTime();
+  });
+
+  // Save as wav
+  item.querySelectorAll('.btn')[2].addEventListener('click', async () => {
+    const offCtx = new OfflineAudioContext(audioBuf.numberOfChannels, audioBuf.length, audioBuf.sampleRate);
+    const src = offCtx.createBufferSource();
+    src.buffer = audioBuf; src.connect(offCtx.destination); src.start();
+    const rendered = await offCtx.startRendering();
+    const wav = bufferToWav(rendered);
+    const blobWav = new Blob([wav], {type:'audio/wav'});
+    const url = URL.createObjectURL(blobWav);
+    const a = document.createElement('a');
+    a.href = url; a.download = name + '.wav'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  list.appendChild(item);
+  document.getElementById('rec-timer').textContent = '0:00.000';
+}
+let ytPlayer = null;
+let ytList = JSON.parse(localStorage.getItem('onkyo-yt') || '[]');
+let ytIdx = 0;
+let ytShuf = false;
+let ytProgInterval = null;
+
+function onYouTubeIframeAPIReady() {
+  // 機能01: Stream Player
+  ytPlayer = new YT.Player('youtube-player', {
+    height: '1', width: '1',
+    playerVars: { autoplay:0, controls:0, disablekb:1, fs:0, iv_load_policy:3, modestbranding:1, rel:0 },
+    events: { onReady: () => { ytPlayer.setVolume(80); ytRender(); }, onStateChange: ytStateChange }
+  });
+}
+
+function ytStateChange(e) {
+  if (e.data === YT.PlayerState.ENDED) ytNext();
+  if (e.data === YT.PlayerState.PLAYING) {
+    document.getElementById('yt-play').textContent = '⏸';
+    document.getElementById('yt-dot').classList.add('on');
+    clearInterval(ytProgInterval);
+    ytProgInterval = setInterval(ytUpdateProg, 500);
+  }
+  if (e.data === YT.PlayerState.PAUSED) {
+    document.getElementById('yt-play').textContent = '▶';
+    document.getElementById('yt-dot').classList.remove('on');
+  }
+}
+
+function ytUpdateProg() {
+  if (!ytPlayer || !ytPlayer.getCurrentTime) return;
+  const c = ytPlayer.getCurrentTime() || 0;
+  const d = ytPlayer.getDuration() || 0;
+  document.getElementById('yt-fill').style.width = d ? (c/d*100)+'%' : '0%';
+  document.getElementById('yt-cur').textContent = fmtTime(c);
+  document.getElementById('yt-dur').textContent = fmtTime(d);
+}
+
+function ytSeek(e) {
+  if (!ytPlayer || !ytPlayer.getDuration) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  ytPlayer.seekTo((e.clientX - r.left) / r.width * ytPlayer.getDuration(), true);
+}
+
+function ytPlay() {
+  if (!ytPlayer) return;
+  if (!ytList.length) return;
+  const s = ytPlayer.getPlayerState();
+  if (s === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+  else if (s === YT.PlayerState.PAUSED || s === YT.PlayerState.CUED) ytPlayer.playVideo();
+  else ytLoad(ytIdx, true);
+}
+
+function ytNext() {
+  if (!ytList.length) return;
+  const n = ytShuf ? Math.floor(Math.random()*ytList.length) : (ytIdx+1)%ytList.length;
+  ytLoad(n, true);
+}
+
+function ytPrev() {
+  if (!ytList.length) return;
+  ytLoad((ytIdx-1+ytList.length)%ytList.length, true);
+}
+
+function ytShuffle() {
+  ytShuf = !ytShuf;
+  const b = document.getElementById('yt-shuf');
+  b.classList.toggle('on', ytShuf);
+  b.textContent = ytShuf ? 'shuffle: on' : 'shuffle';
+}
+
+function ytVol(el) { if (ytPlayer) ytPlayer.setVolume(+el.value); }
+
+function ytLoad(i, play) {
+  ytIdx = i;
+  const t = ytList[i];
+  if (!t || !ytPlayer) return;
+  document.getElementById('yt-title').textContent = t.title;
+  document.querySelectorAll('.track').forEach((el,j) => el.classList.toggle('active', j===i));
+  if (play) ytPlayer.loadVideoById(t.id);
+  else ytPlayer.cueVideoById(t.id);
+}
+
+function ytExtractId(url) {
+  const m = url.trim().match(/(?:v=|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  if (/^[A-Za-z0-9_-]{11}$/.test(url.trim())) return url.trim();
+  return null;
+}
+
+async function ytAdd() {
+  const inp = document.getElementById('yt-url');
+  const vid = ytExtractId(inp.value);
+  if (!vid) { inp.style.borderColor='#7a4040'; setTimeout(()=>inp.style.borderColor='',1000); return; }
+  if (ytList.find(t=>t.id===vid)) { inp.value=''; return; }
+  const btn = document.querySelector('#mode-youtube .add-row .btn');
+  btn.textContent='...'; btn.disabled=true;
+  let title = vid;
+  try {
+    const r = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${vid}&format=json`);
+    if (r.ok) title = (await r.json()).title;
+  } catch {}
+  ytList.push({id:vid,title});
+  localStorage.setItem('onkyo-yt', JSON.stringify(ytList));
+  ytRender();
+  inp.value=''; btn.textContent='+ add'; btn.disabled=false;
+  if (ytList.length===1) ytLoad(0, false);
+}
+
+function ytRender() {
+  const pl = document.getElementById('yt-playlist');
+  pl.querySelectorAll('.track').forEach(e=>e.remove());
+  document.getElementById('yt-count').textContent = ytList.length + ' track' + (ytList.length!==1?'s':'');
+  ytList.forEach((t,i)=>{
+    const d = document.createElement('div');
+    d.className = 'track' + (i===ytIdx?' active':'');
+    d.innerHTML = `<span class="track-n">${String(i+1).padStart(2,'0')}</span><span class="track-t">${esc(t.title)}</span><button class="track-del" data-i="${i}">×</button>`;
+    d.addEventListener('click', e=>{ if(e.target.classList.contains('track-del'))return; ytLoad(i,true); });
+    d.querySelector('.track-del').addEventListener('click', e=>{ e.stopPropagation(); ytList.splice(i,1); localStorage.setItem('onkyo-yt',JSON.stringify(ytList)); ytRender(); });
+    pl.appendChild(d);
+  });
+}
+
+document.getElementById('yt-url')?.addEventListener('keydown', e=>{ if(e.key==='Enter') ytAdd(); });
+
+// ============================================================
+// AUDIO EDITOR
+// ============================================================
+let audioCtx = null;
+let originalBuffer = null;   // 元のバッファ（全体集合）
+let workingBuffer = null;    // 作業中バッファ（編集中）
+let clipboard = null;        // コピーバッファ
+let isPlaying = false;
+let sourceNode = null;
+let gainNode = null;
+let startTime = 0;
+let pauseOffset = 0;
+let playbackRate = 1.0;
+let pitchSemitones = 0;
+let loopEnabled = false;
+let loopSel = false;
+let edVol = 1.0;
+let history = [];            // 編集履歴（有限個の操作）
+
+// Selection state（部分集合 [selStart, selEnd] ⊂ [0, T]）
+let selStart = null;
+let selEnd = null;
+let isDragging = false;
+let dragStartX = 0;
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+  return audioCtx;
+}
+
+function loadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const ctx = getCtx();
+    try {
+      const buf = await ctx.decodeAudioData(e.target.result);
+      originalBuffer = buf;
+      workingBuffer = cloneBuffer(buf);
+      selStart = null; selEnd = null;
+      history = [];
+      document.getElementById('drop-zone').style.display = 'none';
+      document.getElementById('waveform-panel').classList.add('visible');
+      document.getElementById('history-panel').style.display = 'block';
+      drawWaveform();
+      updateTimeRuler();
+      updateSelInfo();
+      updateHistoryUI();
+      updateTotalTime();
+    } catch(err) {
+      alert('音声ファイルを読み込めませんでした: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Drop support
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', ()=>dz.classList.remove('drag'));
+dz.addEventListener('drop', e=>{
+  e.preventDefault(); dz.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('audio/')) {
+    const dt = new DataTransfer(); dt.items.add(file);
+    const inp = document.getElementById('file-input');
+    inp.files = dt.files;
+    loadFile(inp);
+  }
+});
+
+function cloneBuffer(buf) {
+  const ctx = getCtx();
+  const clone = ctx.createBuffer(buf.numberOfChannels, buf.length, buf.sampleRate);
+  for (let i=0; i<buf.numberOfChannels; i++) {
+    clone.copyToChannel(buf.getChannelData(i).slice(), i);
+  }
+  return clone;
+}
+
+// ---- WAVEFORM DRAWING ----
+function drawWaveform() {
+  const canvas = document.getElementById('waveform');
+  const wrap = document.getElementById('waveform-wrap');
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  const ctx2 = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  ctx2.clearRect(0,0,W,H);
+
+  if (!workingBuffer) return;
+
+  const data = workingBuffer.getChannelData(0);
+  const step = Math.ceil(data.length / W);
+  const mid = H / 2;
+
+  // Grid lines
+  ctx2.strokeStyle = 'rgba(26,26,26,0.8)';
+  ctx2.lineWidth = 1;
+  [0.25,0.5,0.75].forEach(y=>{
+    ctx2.beginPath(); ctx2.moveTo(0,H*y); ctx2.lineTo(W,H*y); ctx2.stroke();
+  });
+
+  // Waveform
+  ctx2.beginPath();
+  ctx2.strokeStyle = '#5a6a50';
+  ctx2.lineWidth = 1;
+
+  for (let x=0; x<W; x++) {
+    let min=1, max=-1;
+    for (let j=0; j<step; j++) {
+      const v = data[x*step+j] || 0;
+      if (v<min) min=v; if (v>max) max=v;
+    }
+    ctx2.moveTo(x, mid*(1+min));
+    ctx2.lineTo(x, mid*(1+max));
+  }
+  ctx2.stroke();
+
+  // Selection overlay
+  updateSelOverlay();
+}
+
+function updateSelOverlay() {
+  if (!workingBuffer) return;
+  const overlay = document.getElementById('sel-overlay');
+  const wrap = document.getElementById('waveform-wrap');
+  const W = wrap.clientWidth;
+  const dur = workingBuffer.duration;
+
+  if (selStart !== null && selEnd !== null && selStart !== selEnd) {
+    const s = Math.min(selStart,selEnd)/dur;
+    const e2 = Math.max(selStart,selEnd)/dur;
+    overlay.style.left = (s*100)+'%';
+    overlay.style.width = ((e2-s)*100)+'%';
+    overlay.style.display = 'block';
+  } else {
+    overlay.style.display = 'none';
+  }
+}
+
+function updatePlayhead() {
+  if (!workingBuffer) return;
+  const ph = document.getElementById('playhead');
+  const dur = workingBuffer.duration;
+  const pos = pauseOffset / dur * 100;
+  ph.style.left = pos+'%';
+}
+
+// ---- WAVEFORM INTERACTION ----
+function wfXtoTime(x) {
+  const wrap = document.getElementById('waveform-wrap');
+  const W = wrap.clientWidth;
+  return Math.max(0, Math.min(1, x/W)) * workingBuffer.duration;
+}
+
+function wfMouseDown(e) {
+  if (!workingBuffer) return;
+  isDragging = true;
+  dragStartX = e.offsetX;
+  const t = wfXtoTime(e.offsetX);
+  selStart = t; selEnd = t;
+  updateSelOverlay();
+  updateSelInfo();
+}
+
+function wfMouseMove(e) {
+  if (!isDragging || !workingBuffer) return;
+  selEnd = wfXtoTime(e.offsetX);
+  updateSelOverlay();
+  updateSelInfo();
+}
+
+function wfMouseUp(e) {
+  if (!isDragging) return;
+  isDragging = false;
+  selEnd = wfXtoTime(e.offsetX);
+  if (Math.abs(selStart-selEnd) < 0.001) {
+    // Single click = move playhead
+    pauseOffset = selStart;
+    selStart = null; selEnd = null;
+    updateSelOverlay();
+    updatePlayhead();
+    updateTimeDisplay();
+  }
+  updateSelInfo();
+}
+
+function updateSelInfo() {
+  const el = document.getElementById('sel-info');
+  if (selStart===null || selEnd===null || Math.abs(selStart-selEnd)<0.001) {
+    el.innerHTML = '選択: <span>なし</span>';
+  } else {
+    const s = Math.min(selStart,selEnd), e2 = Math.max(selStart,selEnd);
+    el.innerHTML = `選択: <span>${fmtTimeFull(s)} → ${fmtTimeFull(e2)} (${fmtTimeFull(e2-s)})</span>`;
+  }
+}
+
+// ---- TIME RULER ----
+function updateTimeRuler() {
+  if (!workingBuffer) return;
+  const dur = workingBuffer.duration;
+  const ruler = document.getElementById('time-ruler');
+  ruler.innerHTML = '';
+  const steps = 8;
+  for (let i=0; i<=steps; i++) {
+    const t = dur * i / steps;
+    const span = document.createElement('span');
+    span.textContent = fmtTimeFull(t);
+    ruler.appendChild(span);
+  }
+}
+
+function updateTotalTime() {
+  if (!workingBuffer) return;
+  document.getElementById('ed-total').textContent = '/ ' + fmtTimeFull(workingBuffer.duration);
+}
+
+// ---- PLAYBACK ----
+function edTogglePlay() {
+  if (!workingBuffer) return;
+  if (isPlaying) edPause();
+  else edPlay();
+}
+
+function edPlay() {
+  if (!workingBuffer || isPlaying) return;
+  const ctx = getCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+
+  const start = (loopSel && selStart!==null && selEnd!==null)
+    ? Math.min(selStart,selEnd)
+    : pauseOffset;
+  const end = (loopSel && selStart!==null && selEnd!==null)
+    ? Math.max(selStart,selEnd)
+    : workingBuffer.duration;
+
+  sourceNode = ctx.createBufferSource();
+  sourceNode.buffer = workingBuffer;
+  sourceNode.playbackRate.value = playbackRate;
+  sourceNode.loop = loopEnabled || loopSel;
+  if (sourceNode.loop) {
+    sourceNode.loopStart = start;
+    sourceNode.loopEnd = end;
+  }
+
+  gainNode = ctx.createGain();
+  gainNode.gain.value = edVol;
+  sourceNode.connect(gainNode);
+  gainNode.connect(ctx.destination);
+
+  sourceNode.start(0, start, loopEnabled || loopSel ? undefined : end - start);
+  startTime = ctx.currentTime - start;
+  isPlaying = true;
+
+  document.getElementById('ed-play-btn').textContent = '⏸';
+  document.getElementById('ed-play-btn').classList.add('on');
+
+  sourceNode.onended = () => {
+    if (!loopEnabled && !loopSel) {
+      isPlaying = false;
+      pauseOffset = 0;
+      document.getElementById('ed-play-btn').textContent = '▶';
+      document.getElementById('ed-play-btn').classList.remove('on');
+    }
+  };
+
+  requestAnimationFrame(edAnimFrame);
+}
+
+function edAnimFrame() {
+  if (!isPlaying) return;
+  const ctx = getCtx();
+  const pos = ctx.currentTime - startTime;
+  pauseOffset = Math.min(pos, workingBuffer ? workingBuffer.duration : pos);
+  updatePlayhead();
+  updateTimeDisplay();
+  requestAnimationFrame(edAnimFrame);
+}
+
+function edPause() {
+  if (!isPlaying) return;
+  if (sourceNode) { try { sourceNode.stop(); } catch(e){} }
+  pauseOffset = getCtx().currentTime - startTime;
+  isPlaying = false;
+  document.getElementById('ed-play-btn').textContent = '▶';
+  document.getElementById('ed-play-btn').classList.remove('on');
+}
+
+function edStop() {
+  edPause();
+  pauseOffset = 0;
+  updatePlayhead();
+  updateTimeDisplay();
+}
+
+function edSeekStart() {
+  const wasPlaying = isPlaying;
+  edStop();
+  if (wasPlaying) edPlay();
+}
+
+function updateTimeDisplay() {
+  document.getElementById('ed-time').textContent = fmtTimeFull(pauseOffset);
+}
+
+// ---- SPEED / PITCH ----
+function updateSpeed(v) {
+  playbackRate = v / 100;
+  document.getElementById('speed-val').textContent = playbackRate.toFixed(2) + '×';
+  if (sourceNode) sourceNode.playbackRate.value = playbackRate;
+}
+function setSpeed(v) {
+  document.getElementById('speed-slider').value = v;
+  updateSpeed(v);
+}
+
+function updatePitch(v) {
+  pitchSemitones = parseInt(v);
+  document.getElementById('pitch-val').textContent = (pitchSemitones>=0?'+':'')+pitchSemitones+' st';
+  // WebAudio APIのみでのピッチシフトは再生レートで近似
+  // True pitch shift requires phase vocoder (SoundTouchJS等)
+  // ここでは視覚的フィードバックと再生レート補正で実装
+  const pitchRate = Math.pow(2, pitchSemitones/12);
+  if (sourceNode) sourceNode.playbackRate.value = playbackRate * pitchRate;
+}
+function setPitch(v) {
+  document.getElementById('pitch-slider').value = v;
+  updatePitch(v);
+}
+
+function updateEdVol(v) {
+  edVol = v / 100;
+  document.getElementById('ed-vol-val').textContent = v + '%';
+  if (gainNode) gainNode.gain.value = edVol;
+}
+
+function toggleLoop() {
+  loopEnabled = !loopEnabled;
+  const b = document.getElementById('btn-loop');
+  b.textContent = loopEnabled ? 'loop: on' : 'loop: off';
+  b.classList.toggle('on', loopEnabled);
+}
+
+function toggleLoopSel() {
+  loopSel = !loopSel;
+  const b = document.getElementById('btn-loop-sel');
+  b.classList.toggle('on', loopSel);
+}
+
+// ---- EDIT OPERATIONS ----
+// 音声バッファを全体集合 X = [0, T] と考える
+// 選択区間 A = [selStart, selEnd] ⊂ X（部分位相を引き継ぐ）
+// 各編集操作は有限回で完結する（コンパクト性の類似）
+
+function getSelRange() {
+  if (selStart===null || selEnd===null || Math.abs(selStart-selEnd)<0.001) return null;
+  return { s: Math.min(selStart,selEnd), e: Math.max(selStart,selEnd) };
+}
+
+function saveHistory(op) {
+  history.push({ op, snapshot: cloneBuffer(workingBuffer) });
+  updateHistoryUI();
+}
+
+function editCut() {
+  const sel = getSelRange();
+  if (!sel) return alert('範囲を選択してください');
+  saveHistory('cut');
+  clipboard = extractRegion(workingBuffer, sel.s, sel.e);
+  workingBuffer = removeRegion(workingBuffer, sel.s, sel.e);
+  selStart = null; selEnd = null;
+  afterEdit();
+}
+
+function editCopy() {
+  const sel = getSelRange();
+  if (!sel) return alert('範囲を選択してください');
+  clipboard = extractRegion(workingBuffer, sel.s, sel.e);
+  document.getElementById('sel-info').innerHTML = 'コピー完了: <span>' + fmtTimeFull(sel.e-sel.s) + '</span>';
+}
+
+function editPaste() {
+  if (!clipboard) return alert('コピーされたデータがありません');
+  saveHistory('paste');
+  workingBuffer = insertAt(workingBuffer, clipboard, pauseOffset);
+  afterEdit();
+}
+
+function editSilence() {
+  const sel = getSelRange();
+  if (!sel) return alert('範囲を選択してください');
+  saveHistory('silence');
+  workingBuffer = silenceRegion(workingBuffer, sel.s, sel.e);
+  afterEdit();
+}
+
+function editUndo() {
+  if (!history.length) return;
+  const last = history.pop();
+  workingBuffer = last.snapshot;
+  afterEdit();
+  updateHistoryUI();
+}
+
+// フェードイン・フェードアウト
+// 選択区間 A = [s, e] ⊂ [0, T] にゲインエンベロープを適用
+// フェードイン：ゲインが 0 → 1 に線形増加
+// フェードアウト：ゲインが 1 → 0 に線形減少
+function editFade(direction) {
+  const sel = getSelRange();
+  if (!sel) return alert('範囲を選択してください');
+  saveHistory('fade ' + direction);
+  const clone = cloneBuffer(workingBuffer);
+  const sr = clone.sampleRate;
+  const s0 = Math.floor(sel.s * sr);
+  const e0 = Math.floor(sel.e * sr);
+  const len = e0 - s0;
+  for (let c = 0; c < clone.numberOfChannels; c++) {
+    const data = clone.getChannelData(c);
+    for (let i = 0; i < len; i++) {
+      const gain = direction === 'in' ? i / len : 1 - i / len;
+      data[s0 + i] *= gain;
+    }
+  }
+  workingBuffer = clone;
+  afterEdit();
+}
+
+// マージ（複数音源を一つに）
+function openMerge() {
+  if (!workingBuffer) return alert('先に音声ファイルを読み込んでください');
+  const d = document.getElementById('merge-dialog');
+  d.style.display = d.style.display === 'none' ? 'block' : 'none';
+}
+
+async function executeMerge() {
+  const input = document.getElementById('merge-input');
+  if (!input.files[0]) return alert('ファイルを選択してください');
+  const pos = document.getElementById('merge-pos').value;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const ctx = getCtx();
+    try {
+      const newBuf = await ctx.decodeAudioData(e.target.result);
+      saveHistory('merge (' + pos + ')');
+      const insertPos = pos === 'end' ? workingBuffer.duration
+                      : pos === 'start' ? 0
+                      : pauseOffset;
+      workingBuffer = insertAt(workingBuffer, newBuf, insertPos);
+      document.getElementById('merge-dialog').style.display = 'none';
+      afterEdit();
+    } catch(err) { alert('ファイルを読み込めません: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(input.files[0]);
+}
+
+function afterEdit() {
+  edStop();
+  drawWaveform();
+  updateTimeRuler();
+  updateSelInfo();
+  updateTotalTime();
+  updateHistoryUI();
+}
+
+// ---- BUFFER OPERATIONS ----
+function extractRegion(buf, s, e) {
+  const ctx = getCtx();
+  const sr = buf.sampleRate;
+  const startSample = Math.floor(s * sr);
+  const endSample = Math.floor(e * sr);
+  const len = endSample - startSample;
+  const out = ctx.createBuffer(buf.numberOfChannels, len, sr);
+  for (let c=0; c<buf.numberOfChannels; c++) {
+    out.copyToChannel(buf.getChannelData(c).slice(startSample, endSample), c);
+  }
+  return out;
+}
+
+function removeRegion(buf, s, e) {
+  const ctx = getCtx();
+  const sr = buf.sampleRate;
+  const s0 = Math.floor(s * sr);
+  const e0 = Math.floor(e * sr);
+  const newLen = buf.length - (e0 - s0);
+  const out = ctx.createBuffer(buf.numberOfChannels, newLen, sr);
+  for (let c=0; c<buf.numberOfChannels; c++) {
+    const data = buf.getChannelData(c);
+    const outData = new Float32Array(newLen);
+    outData.set(data.slice(0, s0), 0);
+    outData.set(data.slice(e0), s0);
+    out.copyToChannel(outData, c);
+  }
+  return out;
+}
+
+function insertAt(buf, insertBuf, pos) {
+  const ctx = getCtx();
+  const sr = buf.sampleRate;
+  const insSamples = insertBuf.length;
+  const posSample = Math.floor(pos * sr);
+  const newLen = buf.length + insSamples;
+  const out = ctx.createBuffer(buf.numberOfChannels, newLen, sr);
+  const channels = Math.min(buf.numberOfChannels, insertBuf.numberOfChannels);
+  for (let c=0; c<buf.numberOfChannels; c++) {
+    const data = buf.getChannelData(c);
+    const insData = c < channels ? insertBuf.getChannelData(c) : new Float32Array(insSamples);
+    const outData = new Float32Array(newLen);
+    outData.set(data.slice(0, posSample), 0);
+    outData.set(insData, posSample);
+    outData.set(data.slice(posSample), posSample + insSamples);
+    out.copyToChannel(outData, c);
+  }
+  return out;
+}
+
+function silenceRegion(buf, s, e) {
+  const ctx = getCtx();
+  const clone = cloneBuffer(buf);
+  const sr = buf.sampleRate;
+  const s0 = Math.floor(s * sr);
+  const e0 = Math.floor(e * sr);
+  for (let c=0; c<clone.numberOfChannels; c++) {
+    const data = clone.getChannelData(c);
+    data.fill(0, s0, e0);
+  }
+  return clone;
+}
+
+// ---- EXPORT ----
+async function exportAudio() {
+  if (!workingBuffer) return;
+  const offCtx = new OfflineAudioContext(
+    workingBuffer.numberOfChannels,
+    workingBuffer.length,
+    workingBuffer.sampleRate
+  );
+  const src = offCtx.createBufferSource();
+  src.buffer = workingBuffer;
+  src.connect(offCtx.destination);
+  src.start();
+  const rendered = await offCtx.startRendering();
+  const wav = bufferToWav(rendered);
+  const blob = new Blob([wav], {type:'audio/wav'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'edited_audio.wav'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function bufferToWav(buf) {
+  const numCh = buf.numberOfChannels;
+  const sr = buf.sampleRate;
+  const len = buf.length;
+  const dataLen = len * numCh * 2;
+  const ab = new ArrayBuffer(44 + dataLen);
+  const view = new DataView(ab);
+  const w = (off,v,s) => { if(s===2) view.setUint16(off,v,true); else if(s===4) view.setUint32(off,v,true); };
+  const writeStr = (off,s) => { for(let i=0;i<s.length;i++) view.setUint8(off+i,s.charCodeAt(i)); };
+  writeStr(0,'RIFF'); w(4,36+dataLen,4); writeStr(8,'WAVE');
+  writeStr(12,'fmt '); w(16,16,4); w(20,1,2); w(22,numCh,2); w(24,sr,4);
+  w(28,sr*numCh*2,4); w(32,numCh*2,2); w(34,16,2);
+  writeStr(36,'data'); w(40,dataLen,4);
+  let offset = 44;
+  for (let i=0; i<len; i++) {
+    for (let c=0; c<numCh; c++) {
+      const s = Math.max(-1,Math.min(1,buf.getChannelData(c)[i]));
+      view.setInt16(offset, s<0?s*0x8000:s*0x7FFF, true);
+      offset += 2;
+    }
+  }
+  return ab;
+}
+
+// ---- HISTORY UI ----
+function updateHistoryUI() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = '';
+  if (!history.length) {
+    list.innerHTML = '<div class="history-item"><span style="color:var(--text-dim)">履歴なし</span></div>';
+    return;
+  }
+  [...history].reverse().forEach((h,i)=>{
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `<span class="h-op">${h.op}</span><span class="h-undo" onclick="undoTo(${history.length-1-i})">undo here</span>`;
+    list.appendChild(div);
+  });
+}
+
+function undoTo(idx) {
+  workingBuffer = history[idx].snapshot;
+  history = history.slice(0, idx);
+  afterEdit();
+}
+
+// ---- UTILS ----
+function fmtTime(s) {
+  s = Math.floor(s);
+  return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+}
+function fmtTimeFull(s) {
+  const m = Math.floor(s/60);
+  const sec = Math.floor(s%60);
+  const ms = Math.floor((s%1)*1000);
+  return m+':'+String(sec).padStart(2,'0')+'.'+String(ms).padStart(3,'0');
+}
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Resize waveform on window resize
+window.addEventListener('resize', ()=>{ if(workingBuffer) drawWaveform(); vsResizeCanvas(); });
+
+// Init
+ytRender();
+
+// ============================================================
+// VISUAL SOUND ENGINE
+// ============================================================
+let vsCanvas, vsCtx, vsFreqCanvas, vsFreqCtx;
+let vsParticles = [];
+let vsAnalyser = null;
+let vsAudioCtx2 = null;
+let vsAudioDest = null;
+let vsHue = 200;
+let vsRainbow = false;
+let vsIntensity = 5;
+let vsParticleMode = 'flame';
+let vsMouseX = 0, vsMouseY = 0, vsMouseDown = false;
+let vsLastX = 0, vsLastY = 0;
+let vsAnimId = null;
+let vsRecorder = null;
+let vsRecChunks = [];
+let vsIsRecording = false;
+let vsFreqData = null;
+let vsFrameCount = 0;
+
+function vsInit() {
+  vsCanvas = document.getElementById('vs-canvas');
+  vsCtx = vsCanvas.getContext('2d');
+  vsFreqCanvas = document.getElementById('vs-freq-canvas');
+  vsFreqCtx = vsFreqCanvas.getContext('2d');
+  vsResizeCanvas();
+  vsClear();
+  vsBindEvents();
+  vsBindPalette();
+  vsSafariSetup();
+  vsLoop();
+}
+
+// Safari: AudioContext は "suspended" 状態で生成される。
+// ユーザーの最初のタップ/クリックで resume() を呼ぶ必要がある。
+function vsSafariSetup() {
+  const unlock = () => {
+    if (vsAudioCtx2 && vsAudioCtx2.state === 'suspended') {
+      vsAudioCtx2.resume();
+    }
+    // AudioContextがまだなければ軽量に作っておく
+    if (!vsAudioCtx2) vsGetAudioCtx();
+    document.removeEventListener('touchstart', unlock);
+    document.removeEventListener('click', unlock);
+  };
+  document.addEventListener('touchstart', unlock, { once: true });
+  document.addEventListener('click', unlock, { once: true });
+
+  // Safari で MediaRecorder が非対応の場合、RECボタンを差し替える
+  if (typeof MediaRecorder === 'undefined' || !vsCanRecord()) {
+    const recBtn = document.getElementById('vs-rec-btn');
+    if (recBtn) {
+      recBtn.textContent = '● REC 非対応';
+      recBtn.disabled = true;
+      recBtn.style.opacity = '0.4';
+      recBtn.title = 'このブラウザは録画に対応していません（Chrome/Firefox推奨）';
+    }
+    // 機能03のSafari注意書きも表示
+    const notice = document.getElementById('rec-safari-notice');
+    if (notice) notice.style.display = '';
+    const recBtn2 = document.getElementById('rec-btn');
+    if (recBtn2) { recBtn2.disabled = true; recBtn2.style.opacity = '0.4'; }
+  }
+}
+
+function vsCanRecord() {
+  if (typeof MediaRecorder === 'undefined') return false;
+  const types = ['video/webm', 'video/mp4', ''];
+  return types.some(t => t === '' || MediaRecorder.isTypeSupported(t));
+}
+
+function vsResizeCanvas() {
+  if (!vsCanvas) return;
+  const wrap = document.getElementById('mode-visual');
+  if (!wrap || wrap.style.display === 'none') return;
+  vsCanvas.width = vsCanvas.clientWidth;
+  vsCanvas.height = vsCanvas.clientHeight;
+  vsFreqCanvas.width = vsFreqCanvas.clientWidth;
+  vsFreqCanvas.height = vsFreqCanvas.clientHeight;
+  if (vsCtx) { vsCtx.fillStyle = '#000'; vsCtx.fillRect(0,0,vsCanvas.width,vsCanvas.height); }
+}
+
+function vsBindEvents() {
+  vsCanvas.addEventListener('mousedown', e => { vsMouseDown=true; vsLastX=e.offsetX; vsLastY=e.offsetY; });
+  vsCanvas.addEventListener('mousemove', e => { vsMouseX=e.offsetX; vsMouseY=e.offsetY; if(vsMouseDown) vsEmit(e.offsetX,e.offsetY); });
+  vsCanvas.addEventListener('mouseup', () => vsMouseDown=false);
+  vsCanvas.addEventListener('mouseleave', () => vsMouseDown=false);
+  vsCanvas.addEventListener('touchstart', e => { e.preventDefault(); const t=e.touches[0]; const r=vsCanvas.getBoundingClientRect(); vsMouseDown=true; vsLastX=t.clientX-r.left; vsLastY=t.clientY-r.top; });
+  vsCanvas.addEventListener('touchmove', e => { e.preventDefault(); const t=e.touches[0]; const r=vsCanvas.getBoundingClientRect(); vsEmit(t.clientX-r.left, t.clientY-r.top); });
+  vsCanvas.addEventListener('touchend', () => vsMouseDown=false);
+  document.getElementById('vs-intensity').addEventListener('input', e => vsIntensity = +e.target.value);
+  document.getElementById('vs-mode').addEventListener('change', e => vsParticleMode = e.target.value);
+}
+
+function vsBindPalette() {
+  document.querySelectorAll('.vs-color').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.vs-color').forEach(e=>e.classList.remove('active'));
+      el.classList.add('active');
+      const h = +el.dataset.hue;
+      if (h === -1) { vsRainbow = true; }
+      else { vsRainbow = false; vsHue = h; }
+    });
+  });
+}
+
+function vsGetAudioCtx() {
+  if (!vsAudioCtx2) {
+    // Safari は webkit プレフィックスが必要な場合がある
+    vsAudioCtx2 = new (window.AudioContext || window.webkitAudioContext)();
+    vsAudioDest = vsAudioCtx2.createMediaStreamDestination();
+    vsAnalyser = vsAudioCtx2.createAnalyser();
+    vsAnalyser.fftSize = 256;
+    vsAnalyser.connect(vsAudioDest);
+    vsAnalyser.connect(vsAudioCtx2.destination);
+    vsFreqData = new Uint8Array(vsAnalyser.frequencyBinCount);
+  }
+  // Safari はユーザー操作後でないと suspended のまま → 都度 resume
+  if (vsAudioCtx2.state === 'suspended') {
+    vsAudioCtx2.resume().catch(()=>{});
+  }
+  return vsAudioCtx2;
+}
+
+
+// ---- File-only audio system (YouTube削除済み) ----
+let vsAudioBuffer = null;   // decoded AudioBuffer
+let vsAudioNode   = null;   // currently playing BufferSourceNode
+let vsMazePlaying = false;
+let vsMazeStartWallTime = 0; // AudioContext.currentTime when play was pressed
+let vsMazeStartSec = 0;      // start offset in seconds
+
+function vsLoadFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    // AudioContext を unlock（Safariはファイル選択後もsuspendedのまま）
+    const ctx = vsGetAudioCtx();
+    if (ctx.state === 'suspended') { await ctx.resume().catch(()=>{}); }
+    try {
+      // Safari は ArrayBuffer を消費するので slice でコピーを渡す
+      const arrayBuf = e.target.result.slice ? e.target.result.slice(0) : e.target.result;
+
+      // Safari 旧版はPromise版decodeAudioDataが非対応 → コールバック版で統一
+      const buf = await new Promise((resolve, reject) => {
+        try {
+          ctx.decodeAudioData(arrayBuf, resolve, reject);
+        } catch(ex) { reject(ex); }
+      });
+
+      vsAudioBuffer = buf;
+      const dur = buf.duration;
+      const startEl  = document.getElementById('mz-start');
+      const endEl    = document.getElementById('mz-end');
+      const durLabel = document.getElementById('mz-duration-label');
+      startEl.value = 0;
+      endEl.value   = Math.floor(dur);
+      endEl.max     = Math.floor(dur);
+      startEl.max   = Math.floor(dur);
+      durLabel.textContent = `/ ${fmtTimeFull(dur)}`;
+      document.getElementById('vs-audio-status').textContent =
+        file.name.length > 22 ? file.name.slice(0,22)+'…' : file.name;
+      document.getElementById('vs-play-btn').disabled = false;
+      document.getElementById('vs-file-clear-btn').style.display = '';
+      if (vsDrawMode === 'maze') mzInit();
+    } catch(err) {
+      alert('音声ファイルを読み込めませんでした。\n対応形式: mp3 / aac / wav / m4a\n(' + (err.message||err) + ')');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function vsUnloadFile() {
+  vsMazeStop();
+  vsAudioBuffer = null;
+  const fileInput = document.getElementById('vs-file');
+  fileInput.value = '';
+  document.getElementById('vs-audio-status').textContent = 'ファイルを選択してください';
+  document.getElementById('vs-play-btn').disabled = true;
+  document.getElementById('vs-file-clear-btn').style.display = 'none';
+  document.getElementById('mz-duration-label').textContent = '';
+  if (vsDrawMode === 'maze') mzInit();
+}
+
+function vsMazePlay() {
+  if (!vsAudioBuffer) return;
+  vsMazeStop(); // stop any existing playback
+
+  const startSec = parseFloat(document.getElementById('mz-start').value) || 0;
+  const endSec   = parseFloat(document.getElementById('mz-end').value)   || vsAudioBuffer.duration;
+  vsMazeStartSec = startSec;
+
+  const ctx = vsGetAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+
+  vsAudioNode = ctx.createBufferSource();
+  vsAudioNode.buffer = vsAudioBuffer;
+  vsAudioNode.connect(vsAnalyser);
+  vsAudioNode.connect(ctx.destination);
+  vsAudioNode.start(0, startSec, endSec - startSec);
+  vsAudioNode.onended = () => { vsMazePlaying = false; vsMazeUpdatePlayBtn(); };
+
+  vsMazeStartWallTime = ctx.currentTime;
+  vsMazePlaying = true;
+
+  // Reset and start runner
+  mz.startTime = performance.now();
+  mz.solveIdx  = 0;
+  mz.autoTimer = 0;
+  mz.runner.x = 0; mz.runner.y = 0;
+  mz.runner.fromX = mz.cell/2; mz.runner.fromY = mz.cell/2;
+  mz.runner.toX   = mz.cell/2; mz.runner.toY   = mz.cell/2;
+  mz.runner.px    = mz.cell/2; mz.runner.py    = mz.cell/2;
+  mz.runner.t     = 1;
+  mz.runner.trail = [];
+  mz.goalReached  = false;
+  mz.overlayAlpha = 0;
+  mzBuildTrailCache();
+  mzLastTrailLen  = 0;
+
+  vsMazeUpdatePlayBtn();
+}
+
+function vsMazeStop() {
+  if (vsAudioNode) { try { vsAudioNode.stop(); } catch(_){} vsAudioNode = null; }
+  vsMazePlaying = false;
+  vsMazeUpdatePlayBtn();
+}
+
+function vsMazeUpdatePlayBtn() {
+  const pb = document.getElementById('vs-play-btn');
+  const sb = document.getElementById('vs-stop-btn');
+  if (pb) pb.style.display = vsMazePlaying ? 'none' : '';
+  if (sb) sb.style.display = vsMazePlaying ? '' : 'none';
+}
+
+
+
+// --- Particle emission ---
+function vsEmit(x, y) {
+  if (!vsAnalyser) { vsEmitParticles(x, y, 1.0); return; }
+  vsAnalyser.getByteFrequencyData(vsFreqData);
+  const bass = vsFreqData.slice(0, 4).reduce((a,b)=>a+b,0) / (4*255);
+  const energy = Math.max(0.1, bass);
+  vsEmitParticles(x, y, energy);
+  vsLastX = x; vsLastY = y;
+}
+
+function vsEmitParticles(x, y, energy) {
+  const count = Math.floor(vsIntensity * 3 * (0.5 + energy));
+  for (let i = 0; i < count; i++) {
+    const hue = vsRainbow ? (vsFrameCount * 2 + i * 15) % 360 : vsHue + (Math.random()-0.5)*30;
+    const p = vsCreateParticle(x, y, hue, energy);
+    vsParticles.push(p);
+  }
+  // Cap particle count
+  if (vsParticles.length > 1500) vsParticles.splice(0, vsParticles.length - 1500);
+}
+
+function vsCreateParticle(x, y, hue, energy) {
+  const mode = vsParticleMode;
+  let vx, vy, life, size, decay;
+
+  if (mode === 'flame') {
+    const angle = (Math.random() - 0.5) * Math.PI * 0.7;
+    const speed = (1 + Math.random() * 3) * (0.5 + energy * 2);
+    vx = Math.sin(angle) * speed;
+    vy = -Math.abs(Math.cos(angle)) * speed - Math.random() * 2;
+    life = 0.8 + Math.random() * 0.4;
+    size = 2 + Math.random() * 4 * energy;
+    decay = 0.015 + Math.random() * 0.01;
+  } else if (mode === 'nebula') {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (0.3 + Math.random() * 1.5) * energy;
+    vx = Math.cos(angle) * speed;
+    vy = Math.sin(angle) * speed;
+    life = 1.0;
+    size = 1 + Math.random() * 6;
+    decay = 0.005 + Math.random() * 0.008;
+  } else if (mode === 'electric') {
+    vx = (Math.random()-0.5) * 8 * energy;
+    vy = (Math.random()-0.5) * 8 * energy;
+    life = 0.5 + Math.random() * 0.3;
+    size = 1 + Math.random() * 2;
+    decay = 0.04 + Math.random() * 0.03;
+  } else { // snow
+    vx = (Math.random()-0.5) * 1.5;
+    vy = 0.5 + Math.random() * 2;
+    life = 1.0;
+    size = 1 + Math.random() * 3;
+    decay = 0.003 + Math.random() * 0.005;
+  }
+
+  return { x, y, vx, vy, life, size, decay, hue };
+}
+
+
+
+function vsDrawFreq() {
+  if (!vsFreqCanvas || !vsFreqCtx) return;
+  const W = vsFreqCanvas.width, H = vsFreqCanvas.height;
+  vsFreqCtx.clearRect(0, 0, W, H);
+  vsFreqCtx.fillStyle = 'rgba(0,0,0,0.3)';
+  vsFreqCtx.fillRect(0, 0, W, H);
+
+  if (!vsFreqData) return;
+  vsAnalyser && vsAnalyser.getByteFrequencyData(vsFreqData);
+  const len = vsFreqData.length;
+  const bw = W / len;
+
+  for (let i = 0; i < len; i++) {
+    const v = vsFreqData[i] / 255;
+    const h = v * H * 0.9;
+    const hue = vsRainbow ? (i/len*360) : vsHue;
+    vsFreqCtx.fillStyle = `hsla(${hue},100%,${40+v*40}%,${0.4+v*0.6})`;
+    vsFreqCtx.fillRect(i*bw, H-h, bw-1, h);
+  }
+}
+
+function vsClear() {
+  if (vsDrawMode === 'maze') { mzInit(); return; }
+  if (!vsCanvas || !vsCtx) return;
+  vsParticles = [];
+  vsCtx.fillStyle = '#000';
+  vsCtx.fillRect(0, 0, vsCanvas.width, vsCanvas.height);
+}
+
+// --- REC & EXPORT ---
+function vsToggleRec() {
+  if (vsIsRecording) { vsStopRec(); return; }
+  vsStartRec();
+}
+
+function vsStartRec() {
+  // Safari は MediaRecorder 自体をサポートしていない場合がある
+  if (typeof MediaRecorder === 'undefined') {
+    alert('このブラウザは録画に対応していません。\nChrome または Firefox をお使いください。');
+    return;
+  }
+
+  // 対応MIMEタイプを優先順で選択（Safari向けmp4を含む）
+  const mimes = [
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+    'video/mp4;codecs=h264,aac',  // Safari 対応形式
+    'video/mp4',
+    '',  // ブラウザデフォルト
+  ];
+  const mime = mimes.find(m => m === '' || MediaRecorder.isTypeSupported(m));
+
+  vsRecChunks = [];
+  let combined;
+  try {
+    const tracks = [...vsCanvas.captureStream(60).getTracks()];
+    if (vsAudioDest) vsAudioDest.stream.getAudioTracks().forEach(t => tracks.push(t));
+    combined = new MediaStream(tracks);
+  } catch(e) {
+    alert('録画ストリームの取得に失敗しました: ' + e.message);
+    return;
+  }
+
+  try {
+    vsRecorder = mime
+      ? new MediaRecorder(combined, { mimeType: mime })
+      : new MediaRecorder(combined);
+  } catch(e) {
+    alert('MediaRecorderの初期化に失敗しました: ' + e.message);
+    return;
+  }
+
+  vsRecorder.ondataavailable = e => { if(e.data && e.data.size>0) vsRecChunks.push(e.data); };
+  vsRecorder.onstop = vsOnRecStop;
+  vsRecorder.start(100);
+  vsIsRecording = true;
+
+  const btn = document.getElementById('vs-rec-btn');
+  btn.textContent = '■ stop rec';
+  btn.style.borderColor = 'var(--playing)';
+  btn.style.color = 'var(--playing)';
+  document.getElementById('vs-export-btn').disabled = true;
+}
+
+function vsStopRec() {
+  if (vsRecorder && vsRecorder.state !== 'inactive') vsRecorder.stop();
+  vsIsRecording = false;
+  const btn = document.getElementById('vs-rec-btn');
+  btn.textContent = '● REC';
+  btn.style.borderColor = 'var(--danger)';
+  btn.style.color = 'var(--danger)';
+}
+
+function vsOnRecStop() {
+  if (vsRecChunks.length === 0) return;
+  // mimeType からファイル拡張子を決定
+  const recMime = vsRecorder.mimeType || 'video/webm';
+  const ext  = recMime.includes('mp4') ? 'mp4' : 'webm';
+  const blob = new Blob(vsRecChunks, { type: recMime });
+  const url  = URL.createObjectURL(blob);
+  const btn  = document.getElementById('vs-export-btn');
+  btn.disabled = false;
+  btn._url  = url;
+  btn._ext  = ext;
+  btn.textContent = `↓ export (${ext})`;
+}
+
+function vsExport() {
+  const btn = document.getElementById('vs-export-btn');
+  if (!btn._url) return;
+  const a = document.createElement('a');
+  a.href = btn._url;
+  a.download = 'visual_sound_' + Date.now() + '.' + (btn._ext || 'webm');
+  a.click();
+}
+
+function vsCleanup() {
+  cancelAnimationFrame(vsAnimId);
+  vsStopRec();
+  vsMazeStop();
+  vsParticles = [];
+}
+
+// ============================================================
+// MAZE MODE — SF Runner System
+// ============================================================
+let vsDrawMode = 'maze';
+
+// ---- Maze state ----
+let mz = {
+  cols:0, rows:0, cell:36,
+  grid:[],          // {n,s,e,w} wall flags
+  runner:{},
+  goalX:0, goalY:0,
+  inkHue:200,
+  goalReached:false,
+  overlayAlpha:0,
+  solvePath:null, solveIdx:0,
+  autoTimer:0,
+  // timing system
+  startTime:0,      // performance.now() when runner started
+  totalSec:180,     // target duration (from mz-end - mz-start)
+  totalCells:0,     // total cells in solvePath
+  // BPM detection
+  bpm:120,
+  beatHistory:[],
+  lastBeatEnergy:0,
+  // HUD
+  currentSpeed:0,
+};
+
+function vsSetDrawMode(mode) {
+  vsDrawMode = mode;
+  const pb = document.getElementById('vs-mode-particle-btn');
+  const mb = document.getElementById('vs-mode-maze-btn');
+  const pc = document.getElementById('vs-particle-ctrl');
+  const hud = document.getElementById('vs-maze-hud');
+  if (mode === 'particle') {
+    pb.style.borderColor='var(--playing)'; pb.style.color='var(--playing)';
+    mb.style.borderColor=''; mb.style.color='';
+    pc.style.display='flex'; hud.style.display='none';
+    vsBindEvents();
+  } else {
+    mb.style.borderColor='var(--playing)'; mb.style.color='var(--playing)';
+    pb.style.borderColor=''; pb.style.color='';
+    pc.style.display='none'; hud.style.display='flex';
+    mzInit();
+  }
+  vsClear();
+}
+
+// ---- Maze generation: recursive backtracker ----
+function mzInit() {
+  const W = vsCanvas.width, H = vsCanvas.height;
+  const endSec   = parseFloat(document.getElementById('mz-end').value)   || 180;
+  const startSec = parseFloat(document.getElementById('mz-start').value) || 0;
+  mz.totalSec = Math.max(10, endSec - startSec);
+
+  // Cell size: fit to canvas, ~5 cells/sec walking pace baseline
+  const baseCells = Math.ceil(mz.totalSec * 3.5);
+  // Determine grid size to match needed path length
+  const aspect = W / H;
+  mz.rows = Math.max(5, Math.round(Math.sqrt(baseCells / aspect)));
+  mz.cols = Math.max(5, Math.round(mz.rows * aspect));
+  mz.cell  = Math.min(Math.floor(W / mz.cols), Math.floor(H / mz.rows), 48);
+  mz.cols  = Math.floor(W / mz.cell);
+  mz.rows  = Math.floor(H / mz.cell);
+
+  mz.grid    = [];
+  const vis  = new Array(mz.cols * mz.rows).fill(false);
+  for (let i = 0; i < mz.cols * mz.rows; i++) mz.grid.push({n:true,s:true,e:true,w:true});
+
+  // Recursive backtracker
+  const stack = [0];
+  vis[0] = true;
+  while (stack.length) {
+    const cur = stack[stack.length-1];
+    const cx = cur%mz.cols, cy = Math.floor(cur/mz.cols);
+    const nb = [];
+    for (const d of [{dx:0,dy:-1,w:'n',o:'s'},{dx:0,dy:1,w:'s',o:'n'},{dx:1,dy:0,w:'e',o:'w'},{dx:-1,dy:0,w:'w',o:'e'}]) {
+      const nx=cx+d.dx, ny=cy+d.dy;
+      if (nx>=0&&nx<mz.cols&&ny>=0&&ny<mz.rows&&!vis[ny*mz.cols+nx]) nb.push({ni:ny*mz.cols+nx,...d});
+    }
+    if (nb.length) {
+      const pick = nb[Math.floor(Math.random()*nb.length)];
+      mz.grid[cur][pick.w]=false; mz.grid[pick.ni][pick.o]=false;
+      vis[pick.ni]=true; stack.push(pick.ni);
+    } else stack.pop();
+  }
+
+  mz.goalX = mz.cols-1; mz.goalY = mz.rows-1;
+  mz.goalReached = false; mz.overlayAlpha = 0;
+  mz.solvePath = null; mz.solveIdx = 0; mz.autoTimer = 0;
+  mz.startTime = 0; // reset — will start on first autoStep
+
+  // Runner
+  mz.runner = {
+    x:0, y:0,
+    fromX: mz.cell/2, fromY: mz.cell/2,
+    toX:   mz.cell/2, toY:   mz.cell/2,
+    px:    mz.cell/2, py:    mz.cell/2,
+    t:1,
+    trail:[],
+  };
+
+  mzBuildPath();
+  mz.totalCells = mz.solvePath ? mz.solvePath.length : 1;
+
+  // Build offscreen caches
+  mzBuildWallCache();
+  mzBuildTrailCache();
+
+  document.addEventListener('keydown', mzOnKey);
+  mzUpdateHUD(0, 0);
+}
+
+function mzIdx(x,y){ return y*mz.cols+x; }
+
+// ---- DFS solver ----
+function mzBuildPath() {
+  const start = 0, goal = mzIdx(mz.goalX, mz.goalY);
+  const prev = new Array(mz.cols*mz.rows).fill(-1);
+  const seen = new Array(mz.cols*mz.rows).fill(false);
+  const stack = [start]; seen[start]=true;
+  const dirs = [{dx:1,dy:0,w:'e'},{dx:-1,dy:0,w:'w'},{dx:0,dy:1,w:'s'},{dx:0,dy:-1,w:'n'}];
+  while (stack.length) {
+    const cur = stack.pop(); if (cur===goal) break;
+    const cx=cur%mz.cols, cy=Math.floor(cur/mz.cols);
+    for (const d of dirs) {
+      const nx=cx+d.dx, ny=cy+d.dy;
+      if (nx<0||nx>=mz.cols||ny<0||ny>=mz.rows) continue;
+      if (mz.grid[cur][d.w]) continue;
+      const ni=mzIdx(nx,ny); if (seen[ni]) continue;
+      seen[ni]=true; prev[ni]=cur; stack.push(ni);
+    }
+  }
+  const path=[];
+  let cur=goal;
+  while (cur!==start&&prev[cur]!==-1) {
+    const p=prev[cur];
+    path.unshift({dx:(cur%mz.cols)-(p%mz.cols), dy:Math.floor(cur/mz.cols)-Math.floor(p/mz.cols)});
+    cur=p;
+  }
+  mz.solvePath=path;
+}
+
+// ---- Keyboard control ----
+function mzOnKey(e) {
+  if (vsDrawMode!=='maze') return;
+  const map={ArrowUp:{dx:0,dy:-1},ArrowDown:{dx:0,dy:1},ArrowLeft:{dx:-1,dy:0},ArrowRight:{dx:1,dy:0},
+             w:{dx:0,dy:-1},s:{dx:0,dy:1},a:{dx:-1,dy:0},d:{dx:1,dy:0}};
+  const dir=map[e.key]; if (!dir) return;
+  e.preventDefault();
+  mzMoveRunner(dir.dx, dir.dy);
+}
+
+function mzMoveRunner(dx, dy) {
+  if (mz.goalReached) return;
+  const r=mz.runner; if (r.t<0.7) return;
+  const nx=r.x+dx, ny=r.y+dy;
+  if (nx<0||nx>=mz.cols||ny<0||ny>=mz.rows) return;
+  const wall=dx===1?'e':dx===-1?'w':dy===1?'s':'n';
+  if (mz.grid[mzIdx(r.x,r.y)][wall]) return;
+  r.fromX=r.toX; r.fromY=r.toY;
+  r.x=nx; r.y=ny;
+  r.toX=nx*mz.cell+mz.cell/2; r.toY=ny*mz.cell+mz.cell/2;
+  r.t=0;
+  r.trail.push({x:r.toX,y:r.toY,hue:mz.inkHue});
+  // ink hue update
+  if (vsFreqData) {
+    const bass=vsFreqData.slice(0,4).reduce((a,b)=>a+b,0)/(4*255);
+    mz.inkHue = vsRainbow ? (mz.inkHue+2+bass*25)%360 : vsHue+bass*40-20;
+  }
+  if (r.x===mz.goalX&&r.y===mz.goalY) { mz.goalReached=true; setTimeout(()=>{mz.overlayAlpha=0.01;},400); }
+}
+
+// ---- BPM detection ----
+function mzDetectBPM(energy) {
+  const now = performance.now();
+  if (energy > 0.6 && energy > mz.lastBeatEnergy * 1.3) {
+    mz.beatHistory.push(now);
+    if (mz.beatHistory.length > 8) mz.beatHistory.shift();
+    if (mz.beatHistory.length >= 2) {
+      const intervals = [];
+      for (let i=1;i<mz.beatHistory.length;i++) intervals.push(mz.beatHistory[i]-mz.beatHistory[i-1]);
+      const avg = intervals.reduce((a,b)=>a+b,0)/intervals.length;
+      const bpm = Math.round(60000/avg);
+      if (bpm>50&&bpm<250) mz.bpm = bpm;
+    }
+  }
+  mz.lastBeatEnergy = energy;
+}
+
+// ---- Auto-runner: DFS path + speed control (機能02-05) ----
+function mzAutoStep(energy, now) {
+  if (!vsMazePlaying) return;   // ▶ play押下後のみ走行
+  if (mz.goalReached||vsDrawMode!=='maze') return;
+  if (!mz.solvePath||mz.solveIdx>=mz.solvePath.length) return;
+
+  if (mz.startTime===0) mz.startTime = now;
+
+  mzDetectBPM(energy);
+
+  const elapsed   = (now - mz.startTime) / 1000;
+  const remaining = Math.max(0.1, mz.totalSec - elapsed);
+  const cellsLeft = mz.totalCells - mz.solveIdx;
+  const neededSpd = cellsLeft / remaining;
+  const audioBoost= 1 + energy * 1.2;
+  const speed     = neededSpd * audioBoost * (mz.bpm/120);
+  mz.currentSpeed = speed;
+
+  mz.autoTimer = (mz.autoTimer||0) + speed / 60;
+  if (mz.autoTimer < 1) return;
+  mz.autoTimer = 0;
+
+  const step = mz.solvePath[mz.solveIdx];
+  mzMoveRunner(step.dx, step.dy);
+  if (mz.runner.t===0) mz.solveIdx++;
+
+  mzUpdateHUD(elapsed, remaining);
+}
+
+function mzUpdateHUD(elapsed, remaining) {
+  // DOM要素をキャッシュ（初回のみ取得）
+  if (!mzUpdateHUD._bpm) {
+    mzUpdateHUD._bpm = document.getElementById('mz-bpm-disp');
+    mzUpdateHUD._spd = document.getElementById('mz-spd-disp');
+    mzUpdateHUD._rem = document.getElementById('mz-remain-disp');
+  }
+  // 1秒に1回だけDOMを更新（毎フレームDOM操作不要）
+  const now = performance.now();
+  if (now - (mzUpdateHUD._last||0) < 1000) return;
+  mzUpdateHUD._last = now;
+  if (mzUpdateHUD._bpm) mzUpdateHUD._bpm.textContent = mz.bpm;
+  if (mzUpdateHUD._spd) mzUpdateHUD._spd.textContent = mz.currentSpeed.toFixed(1)+'c/s';
+  if (mzUpdateHUD._rem) mzUpdateHUD._rem.textContent = Math.max(0,Math.round(remaining))+'s';
+}
+
+// ---- Offscreen caches ----
+let mzWallCanvas = null;   // static maze walls — drawn once
+let mzTrailCanvas = null;  // accumulated ink trail — incremental
+let mzTrailCtx = null;
+let mzLastTrailLen = 0;    // how many trail segments already drawn
+
+function mzBuildWallCache() {
+  mzWallCanvas = document.createElement('canvas');
+  mzWallCanvas.width  = vsCanvas.width;
+  mzWallCanvas.height = vsCanvas.height;
+  const ctx = mzWallCanvas.getContext('2d');
+  const W = mzWallCanvas.width, H = mzWallCanvas.height, cell = mz.cell;
+
+  // Background
+  ctx.fillStyle = '#020408'; ctx.fillRect(0,0,W,H);
+
+  // Faint grid — single path
+  ctx.strokeStyle = 'rgba(15,30,60,0.7)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x=0;x<=W;x+=cell){ ctx.moveTo(x,0); ctx.lineTo(x,H); }
+  for (let y=0;y<=H;y+=cell){ ctx.moveTo(0,y); ctx.lineTo(W,y); }
+  ctx.stroke();
+
+  // All walls in ONE path (no shadowBlur — too expensive)
+  ctx.strokeStyle = 'rgba(40,110,255,0.9)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let cy=0;cy<mz.rows;cy++) for (let cx=0;cx<mz.cols;cx++) {
+    const c=mz.grid[mzIdx(cx,cy)], x=cx*cell, y=cy*cell;
+    if (c.n){ ctx.moveTo(x,y);      ctx.lineTo(x+cell,y); }
+    if (c.s){ ctx.moveTo(x,y+cell); ctx.lineTo(x+cell,y+cell); }
+    if (c.w){ ctx.moveTo(x,y);      ctx.lineTo(x,y+cell); }
+    if (c.e){ ctx.moveTo(x+cell,y); ctx.lineTo(x+cell,y+cell); }
+  }
+  ctx.stroke();
+
+  // START / GOAL text
+  ctx.font = `bold ${cell*0.28}px monospace`; ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(0,255,140,0.9)';
+  ctx.fillText('S', cell/2, cell/2+cell*0.1);
+  ctx.fillStyle = 'rgba(255,210,0,0.9)';
+  ctx.fillText('G', mz.goalX*cell+cell/2, mz.goalY*cell+cell/2+cell*0.1);
+}
+
+function mzBuildTrailCache() {
+  mzTrailCanvas = document.createElement('canvas');
+  mzTrailCanvas.width  = vsCanvas.width;
+  mzTrailCanvas.height = vsCanvas.height;
+  mzTrailCtx = mzTrailCanvas.getContext('2d');
+  mzLastTrailLen = 0;
+}
+
+// Append only NEW trail segments to the trail cache
+function mzUpdateTrailCache() {
+  if (!mzTrailCtx) return;
+  const trail = mz.runner.trail;
+  const cell  = mz.cell;
+  if (trail.length < 2) return;
+  const ctx = mzTrailCtx;
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineWidth = cell * 0.22; ctx.lineCap = 'round';
+  for (let i = Math.max(1, mzLastTrailLen); i < trail.length; i++) {
+    const a = trail[i-1], b = trail[i];
+    const g = ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+    g.addColorStop(0, `hsla(${a.hue},100%,58%,0.85)`);
+    g.addColorStop(1, `hsla(${b.hue},100%,58%,0.85)`);
+    ctx.strokeStyle = g;
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+  }
+  mzLastTrailLen = trail.length;
+}
+
+// ---- Draw ---- (called every frame — now very cheap)
+function mzDraw() {
+  if (!vsCtx||!vsCanvas) return;
+  const ctx=vsCtx, W=vsCanvas.width, H=vsCanvas.height, cell=mz.cell;
+
+  // 1. Stamp cached wall image (single drawImage call)
+  if (mzWallCanvas) ctx.drawImage(mzWallCanvas, 0, 0);
+  else { ctx.fillStyle='#020408'; ctx.fillRect(0,0,W,H); }
+
+  // 2. Append new trail segments to trail cache, then stamp
+  mzUpdateTrailCache();
+  if (mzTrailCanvas) ctx.drawImage(mzTrailCanvas, 0, 0);
+
+  // 3. Runner — smooth interpolation + audio pulse
+  const r = mz.runner;
+  if (r.t < 1) {
+    r.t = Math.min(1, r.t + 0.15);
+    const e = 1 - Math.pow(1-r.t, 3);
+    r.px = r.fromX + (r.toX-r.fromX)*e;
+    r.py = r.fromY + (r.toY-r.fromY)*e;
+  }
+  const energy = vsFreqData ? vsFreqData.slice(0,4).reduce((a,b)=>a+b,0)/(4*255) : 0;
+  const radius  = cell * 0.38 * (1 + energy*0.5);
+  ctx.globalCompositeOperation = 'lighter';
+  const rg = ctx.createRadialGradient(r.px,r.py,0, r.px,r.py,radius*2.5);
+  rg.addColorStop(0,   `hsla(${mz.inkHue},100%,98%,1)`);
+  rg.addColorStop(0.35,`hsla(${mz.inkHue},100%,65%,0.85)`);
+  rg.addColorStop(1,   `hsla(${mz.inkHue},100%,40%,0)`);
+  ctx.beginPath(); ctx.arc(r.px,r.py,radius*2.5,0,Math.PI*2);
+  ctx.fillStyle = rg; ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+
+  // 4. Progress bar — solid color (gradient生成は重いので省略)
+  const progress = mz.totalCells>0 ? mz.solveIdx/mz.totalCells : 0;
+  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(8,H-12,W-16,6);
+  ctx.fillStyle = `hsl(${mz.inkHue},100%,55%)`;
+  ctx.fillRect(8,H-12,(W-16)*progress,6);
+
+  // 5. Goal overlay
+  if (mz.overlayAlpha > 0) {
+    mz.overlayAlpha = Math.min(1, mz.overlayAlpha+0.015);
+    ctx.fillStyle = `rgba(0,0,5,${mz.overlayAlpha*0.75})`; ctx.fillRect(0,0,W,H);
+    if (mz.overlayAlpha > 0.4) {
+      const a = (mz.overlayAlpha-0.4)/0.6;
+      ctx.font = `bold ${Math.min(W,H)*0.055}px monospace`; ctx.textAlign='center';
+      ctx.fillStyle = `rgba(255,220,60,${a})`;
+      ctx.fillText('GOAL', W/2, H/2-Math.min(W,H)*0.07);
+      ctx.font = `${Math.min(W,H)*0.028}px monospace`;
+      ctx.fillStyle = `rgba(160,200,255,${a})`;
+      ctx.fillText('音楽が都市に軌跡を描いた', W/2, H/2);
+      ctx.font = `${Math.min(W,H)*0.02}px monospace`;
+      ctx.fillStyle = `rgba(120,160,200,${a*0.8})`;
+      ctx.fillText(`BPM ${mz.bpm}  /  ${mz.runner.trail.length} cells painted`, W/2, H/2+Math.min(W,H)*0.06);
+    }
+  }
+
+  // 6. Hint
+  if (!mz.goalReached && mz.runner.trail.length===0) {
+    ctx.fillStyle='rgba(80,120,200,0.45)';
+    ctx.font=`${Math.min(W,H)*0.022}px monospace`; ctx.textAlign='center';
+    ctx.fillText('音楽を流すと自動走行  /  ↑↓←→ or WASD で手動操作', W/2, H-20);
+  }
+}
+
+function vsLoop(now) {
+  vsAnimId = requestAnimationFrame(vsLoop);
+  vsFrameCount++;
+
+  if (vsDrawMode==='maze') {
+    let energy=0;
+    if (vsAnalyser) { vsAnalyser.getByteFrequencyData(vsFreqData); energy=vsFreqData.slice(0,8).reduce((a,b)=>a+b,0)/(8*255); }
+    mzAutoStep(energy, now||performance.now());
+    mzDraw();
+    vsDrawFreq();
+    return;
+  }
+
+  // ---- Particle mode ----
+  if (vsAnalyser&&!vsMouseDown) {
+    vsAnalyser.getByteFrequencyData(vsFreqData);
+    const energy=vsFreqData.slice(0,8).reduce((a,b)=>a+b,0)/(8*255);
+    if (energy>0.05) {
+      const cx=vsCanvas.width/2, cy=vsCanvas.height/2;
+      vsEmitParticles(cx+(Math.random()-0.5)*vsCanvas.width*0.3, cy+(Math.random()-0.5)*vsCanvas.height*0.3, energy);
+    }
+  }
+
+  // Render particles
+  if (!vsCanvas||!vsCtx) return;
+  const W=vsCanvas.width, H=vsCanvas.height;
+  vsCtx.globalCompositeOperation='source-over';
+  vsCtx.fillStyle='rgba(0,0,0,0.15)';
+  vsCtx.fillRect(0,0,W,H);
+  vsCtx.globalCompositeOperation='lighter';
+  for (let i=vsParticles.length-1;i>=0;i--) {
+    const p=vsParticles[i];
+    p.x+=p.vx; p.y+=p.vy; p.life-=p.decay;
+    if (vsParticleMode==='flame'){p.vx*=0.98;p.vy*=0.97;}
+    else if (vsParticleMode==='nebula'){p.vx*=0.995;p.vy*=0.995;}
+    else if (vsParticleMode==='electric'){p.vx+=(Math.random()-0.5)*0.5;p.vy+=(Math.random()-0.5)*0.5;}
+    if (p.life<=0){vsParticles.splice(i,1);continue;}
+    vsCtx.globalAlpha=p.life*0.85;
+    vsCtx.fillStyle=`hsl(${p.hue},100%,70%)`;
+    vsCtx.beginPath();
+    vsCtx.arc(p.x,p.y,p.size*p.life*2.5,0,Math.PI*2);
+    vsCtx.fill();
+  }
+  vsCtx.globalAlpha=1;
+  vsCtx.globalCompositeOperation='source-over';
+
+  vsDrawFreq();
+}
+</script>
+<!-- YouTube IFrame API player — body直下に配置（display:none親要素内では初期化失敗するため） -->
+<div id="youtube-player" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;"></div>
+</body>
+</html>
